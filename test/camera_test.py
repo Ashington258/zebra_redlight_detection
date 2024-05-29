@@ -2,7 +2,7 @@ import cv2
 
 def main():
     # 打开默认摄像头（设备索引为0）
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(2)
 
     # 检查摄像头是否成功打开
     if not cap.isOpened():
