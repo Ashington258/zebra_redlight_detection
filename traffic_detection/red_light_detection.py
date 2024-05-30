@@ -1,68 +1,88 @@
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
 
-def show_image(title, image):
-    plt.figure(figsize=(10, 10))
-    plt.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
-    plt.title(title)
-    plt.axis('off')
-    plt.show()
+def nothing(x):
+    pass
 
-# 读取图像
-image = cv2.imread('image\\2.png')
-show_image('Original Image', image)
+# 创建窗口
+cv2.namedWindow('Parameters')
 
-# 1. BGR空间转HSV空间
-hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-show_image('HSV Image', hsv)
+# 创建滑动条
+cv2.createTrackbar('Blur', 'Parameters', 1, 10, nothing)
+cv2.createTrackbar('GaussianBlur', 'Parameters', 1, 10, nothing)
+cv2.createTrackbar('LowH', 'Parameters', 0, 179, nothing)
+cv2.createTrackbar('HighH', 'Parameters', 10, 179, nothing)
+cv2.createTrackbar('LowS', 'Parameters', 100, 255, nothing)
+cv2.createTrackbar('HighS', 'Parameters', 255, 255, nothing)
+cv2.createTrackbar('LowV', 'Parameters', 100, 255, nothing)
+cv2.createTrackbar('HighV', 'Parameters', 255, 255, nothing)
+cv2.createTrackbar('MinRadius', 'Parameters', 10, 100, nothing)
+cv2.createTrackbar('MaxRadius', 'Parameters', 20, 200, nothing)
 
-# 2. 平滑滤波
-smoothed = cv2.medianBlur(hsv, 5)
-show_image('Smoothed Image', smoothed)
+cap = cv2.VideoCapture(0)
 
-# 3. 高斯模糊
-blurred = cv2.GaussianBlur(smoothed, (5, 5), 0)
-show_image('Gaussian Blurred Image', blurred)
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        break
 
-# 4. 设置HSV阈值提取红色，并创建mask掩盖非红色区域
-lower_red1 = np.array([0, 70, 50])
-upper_red1 = np.array([10, 255, 255])
-lower_red2 = np.array([170, 70, 50])
-upper_red2 = np.array([180, 255, 255])
+    # 读取滑动条的值
+    blur = cv2.getTrackbarPos('Blur', 'Parameters')
+    gaussian_blur = cv2.getTrackbarPos('GaussianBlur', 'Parameters')
+    lowH = cv2.getTrackbarPos('LowH', 'Parameters')
+    highH = cv2.getTrackbarPos('HighH', 'Parameters')
+    lowS = cv2.getTrackbarPos('LowS', 'Parameters')
+    highS = cv2.getTrackbarPos('HighS', 'Parameters')
+    lowV = cv2.getTrackbarPos('LowV', 'Parameters')
+    highV = cv2.getTrackbarPos('HighV', 'Parameters')
+    min_radius = cv2.getTrackbarPos('MinRadius', 'Parameters')
+    max_radius = cv2.getTrackbarPos('MaxRadius', 'Parameters')
 
-mask1 = cv2.inRange(blurred, lower_red1, upper_red1)
-mask2 = cv2.inRange(blurred, lower_red2, upper_red2)
-mask = cv2.bitwise_or(mask1, mask2)
-show_image('Red Mask', mask)
+    # 平滑滤波
+    if blur > 0:
+        frame = cv2.medianBlur(frame, blur * 2 + 1)
 
-# 5. Canny边缘检测
-edges = cv2.Canny(mask, 100, 200)
-show_image('Canny Edges', edges)
+    # 高斯模糊
+    if gaussian_blur > 0:
+        frame = cv2.GaussianBlur(frame, (gaussian_blur * 2 + 1, gaussian_blur * 2 + 1), 0)
 
-# 6. 形态学操作，侵蚀和膨胀让红灯轮廓闭合
-kernel = np.ones((5, 5), np.uint8)
-closed = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel)
-show_image('Morphologically Closed Edges', closed)
+    # 转换为HSV颜色空间
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-# 7. 设置阈值，过滤掉过小或过大得闭合区域
-contours, _ = cv2.findContours(closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-filtered_contours = [cnt for cnt in contours if 500 < cv2.contourArea(cnt) < 3000]
+    # 设置HSV阈值提取红色
+    lower_red = np.array([lowH, lowS, lowV])
+    upper_red = np.array([highH, highS, highV])
+    mask = cv2.inRange(hsv, lower_red, upper_red)
 
-# 创建一个空图像来绘制筛选后的轮廓
-filtered_contours_img = np.zeros_like(image)
-cv2.drawContours(filtered_contours_img, filtered_contours, -1, (0, 255, 0), 3)
-show_image('Filtered Contours', filtered_contours_img)
+    # Canny边缘检测
+    edges = cv2.Canny(mask, 50, 150)
 
-# 8. 形态学筛选出圆形得图形，并输出检测到红灯，返回True
-detected = False
-for cnt in filtered_contours:
-    perimeter = cv2.arcLength(cnt, True)
-    circularity = 4 * np.pi * cv2.contourArea(cnt) / (perimeter * perimeter)
-    if 0.7 < circularity < 1.2:  # Circularity threshold
-        detected = True
-        cv2.drawContours(image, [cnt], -1, (0, 255, 0), 3)
+    # 形态学操作
+    kernel = np.ones((5, 5), np.uint8)
+    edges = cv2.dilate(edges, kernel, iterations=1)
+    edges = cv2.erode(edges, kernel, iterations=1)
 
-show_image('Detected Red Lights', image)
+    # 查找轮廓
+    contours, _ = cv2.findContours(edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
-print("Red light detected:", detected)
+    detected = False
+    for cnt in contours:
+        (x, y), radius = cv2.minEnclosingCircle(cnt)
+        if min_radius <= radius <= max_radius:
+            cv2.circle(frame, (int(x), int(y)), int(radius), (0, 255, 0), 2)
+            detected = True
+
+    # 显示处理后的图像
+    cv2.imshow('Frame', frame)
+    cv2.imshow('Mask', mask)
+    cv2.imshow('Edges', edges)
+
+    if detected:
+        print("Red light detected")
+
+    # 按下 'q' 键退出循环
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
