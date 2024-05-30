@@ -1,82 +1,114 @@
 import cv2
 import numpy as np
 
-def process_frame(frame):
-    # 1. 裁剪图像上半部分 30%
-    height, width = frame.shape[:2]
-    roi = frame[int(height*0.3):, :]
-    cv2.imshow("ROI", roi)
+def on_trackbar_change(val):
+    pass
 
-    # 2. 边缘提取轮廓
-    gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
-    edges = cv2.Canny(gray, 50, 150)
-    cv2.imshow("Edges", edges)
+def ensure_odd(val):
+    return val if val % 2 == 1 else val + 1
 
-    # 3. 形态学操作，侵蚀和膨胀
-    kernel = np.ones((5,5),np.uint8)
-    morphed = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel)
-    cv2.imshow("Morphed", morphed)
+def zebra_crossing_detection():
+    cap = cv2.VideoCapture(2)  # 使用摄像头
+    if not cap.isOpened():
+        print("Error: Unable to open camera.")
+        return
+    
+    # 创建窗口和滑动条
+    steps = ['1. Cropped Image', '2. Gray Image', '3. Median Blurred Image', '4. Gaussian Blurred Image', 
+             '5. Canny Edges', '6. Morphologically Closed Edges', '7. Mask with Contours', 
+             '8. ROI Image', '9. ROI Canny Edges', '10. Detected Lines']
+    
+    for step in steps:
+        cv2.namedWindow(step)
 
-    # 4. 提取闭合轮廓区域作为 ROI
-    contours, _ = cv2.findContours(morphed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    mask = np.zeros_like(morphed)
-    for contour in contours:
-        cv2.drawContours(mask, [contour], -1, 255, -1)
-    cv2.imshow("Mask", mask)
+    cv2.createTrackbar('Crop %', '1. Cropped Image', 30, 100, on_trackbar_change)
+    cv2.createTrackbar('Median Blur', '3. Median Blurred Image', 15, 20, on_trackbar_change)
+    cv2.createTrackbar('Gaussian Blur', '4. Gaussian Blurred Image', 0, 15, on_trackbar_change)
+    cv2.createTrackbar('Canny Threshold 1', '5. Canny Edges', 50, 200, on_trackbar_change)
+    cv2.createTrackbar('Canny Threshold 2', '5. Canny Edges', 134, 300, on_trackbar_change)
+    cv2.createTrackbar('Morph Kernel', '6. Morphologically Closed Edges', 1, 20, on_trackbar_change)
+    cv2.createTrackbar('Area Threshold', '6. Morphologically Closed Edges', 3000, 5000, on_trackbar_change)
+    cv2.createTrackbar('Hough Threshold', '10. Detected Lines', 16, 200, on_trackbar_change)
+    cv2.createTrackbar('Line Threshold', '10. Detected Lines', 10, 50, on_trackbar_change)
 
-    roi_masked = cv2.bitwise_and(roi, roi, mask=mask)
-    cv2.imshow("ROI Masked", roi_masked)
-
-    # 5. 灰度化
-    gray_masked = cv2.cvtColor(roi_masked, cv2.COLOR_BGR2GRAY)
-    cv2.imshow("Gray Masked", gray_masked)
-
-    # 6. 平滑滤波
-    smooth = cv2.bilateralFilter(gray_masked, 9, 75, 75)
-    cv2.imshow("Smooth", smooth)
-
-    # 7. 高斯模糊
-    blurred = cv2.GaussianBlur(smooth, (5, 5), 0)
-    cv2.imshow("Blurred", blurred)
-
-    # 8. canny 边缘检测
-    edges_blurred = cv2.Canny(blurred, 50, 150)
-    cv2.imshow("Edges Blurred", edges_blurred)
-
-    # 9. hough 变化检测直线
-    lines = cv2.HoughLinesP(edges_blurred, 1, np.pi/180, threshold=50, minLineLength=50, maxLineGap=10)
-
-    # 10. 统计直线数量
-    if lines is not None:
-        for line in lines:
-            x1, y1, x2, y2 = line[0]
-            cv2.line(roi, (x1, y1), (x2, y2), (0, 255, 0), 2)
-        if len(lines) > 10:  # 阈值设为 10，根据需要调整
-            cv2.putText(frame, 'Zebra Crossing Detected', (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-        print(f"Number of lines detected: {len(lines)}")
-    else:
-        print("No lines detected")
-
-    cv2.imshow("Detected Lines", roi)
-
-    return frame
-
-def main():
-    cap = cv2.VideoCapture(0)
-
-    while cap.isOpened():
-        ret, frame = cap.read()
+    while True:
+        ret, frame = cap.read()  # 从摄像头读取帧
         if not ret:
+            print("Error: Unable to capture frame.")
             break
 
-        processed_frame = process_frame(frame)
-        cv2.imshow("Processed Frame", processed_frame)
+        # 获取滑动条的值
+        crop_percent = cv2.getTrackbarPos('Crop %', '1. Cropped Image') / 100.0
+        median_blur_val = ensure_odd(cv2.getTrackbarPos('Median Blur', '3. Median Blurred Image'))
+        gaussian_blur_val = ensure_odd(cv2.getTrackbarPos('Gaussian Blur', '4. Gaussian Blurred Image'))
+        canny_threshold1 = cv2.getTrackbarPos('Canny Threshold 1', '5. Canny Edges')
+        canny_threshold2 = cv2.getTrackbarPos('Canny Threshold 2', '5. Canny Edges')
+        morph_kernel_size = cv2.getTrackbarPos('Morph Kernel', '6. Morphologically Closed Edges')
+        area_threshold = cv2.getTrackbarPos('Area Threshold', '6. Morphologically Closed Edges')
+        hough_threshold = cv2.getTrackbarPos('Hough Threshold', '10. Detected Lines')
+        line_threshold = cv2.getTrackbarPos('Line Threshold', '10. Detected Lines')
 
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        # 处理图像
+        height = frame.shape[0]
+        cropped_image = frame[int(crop_percent * height):, :]
+        cv2.imshow('1. Cropped Image', cropped_image)
+        
+        gray = cv2.cvtColor(cropped_image, cv2.COLOR_BGR2GRAY)
+        cv2.imshow('2. Gray Image', gray)
+        
+        # 应用中值滤波
+        if median_blur_val > 1:
+            blurred = cv2.medianBlur(gray, median_blur_val)
+        else:
+            blurred = gray
+        cv2.imshow('3. Median Blurred Image', blurred)
+        
+        # 应用高斯模糊
+        if gaussian_blur_val > 1:
+            gaussian_blurred = cv2.GaussianBlur(blurred, (gaussian_blur_val, gaussian_blur_val), 0)
+        else:
+            gaussian_blurred = blurred
+        cv2.imshow('4. Gaussian Blurred Image', gaussian_blurred)
+        
+        edges = cv2.Canny(gaussian_blurred, canny_threshold1, canny_threshold2)
+        cv2.imshow('5. Canny Edges', edges)
+        
+        kernel = np.ones((morph_kernel_size, morph_kernel_size), np.uint8)
+        closed_edges = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel)
+        cv2.imshow('6. Morphologically Closed Edges', closed_edges)
+        
+        contours, _ = cv2.findContours(closed_edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        mask = np.zeros_like(closed_edges)
+        for contour in contours:
+            if cv2.contourArea(contour) > area_threshold:
+                cv2.drawContours(mask, [contour], -1, (255), thickness=cv2.FILLED)
+        cv2.imshow('7. Mask with Contours', mask)
+        
+        roi = cv2.bitwise_and(cropped_image, cropped_image, mask=mask)
+        cv2.imshow('8. ROI Image', roi)
+        
+        roi_gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+        roi_edges = cv2.Canny(roi_gray, canny_threshold1, canny_threshold2)
+        cv2.imshow('9. ROI Canny Edges', roi_edges)
+        
+        lines = cv2.HoughLinesP(roi_edges, 1, np.pi / 180, threshold=hough_threshold, minLineLength=50, maxLineGap=10)
+        
+        line_image = np.copy(cropped_image)
+        if lines is not None:
+            for line in lines:
+                for x1, y1, x2, y2 in line:
+                    cv2.line(line_image, (x1, y1), (x2, y2), (0, 255, 0), 2)
+        cv2.imshow('10. Detected Lines', line_image)
+        
+        detected = lines is not None and len(lines) > line_threshold
+        
+        if cv2.waitKey(1) & 0xFF == 27:  # 按下 'Esc' 键退出
             break
 
     cap.release()
     cv2.destroyAllWindows()
+    return detected
 
-if __name__ == "__main__":
-    main()
+# 调用函数进行测试
+detected = zebra_crossing_detection()
+print("Zebra Crossing Detected: ", detected)
