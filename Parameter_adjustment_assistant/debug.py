@@ -20,13 +20,13 @@ def zebra_crossing_detection(image_path):
         cv2.namedWindow(step)
 
     cv2.createTrackbar('Crop %', '1. Cropped Image', 30, 100, on_trackbar_change)
-    cv2.createTrackbar('Median Blur', '3. Median Blurred Image', 5, 15, on_trackbar_change)
-    cv2.createTrackbar('Gaussian Blur', '4. Gaussian Blurred Image', 5, 15, on_trackbar_change)
+    cv2.createTrackbar('Median Blur', '3. Median Blurred Image', 15, 20, on_trackbar_change)
+    cv2.createTrackbar('Gaussian Blur', '4. Gaussian Blurred Image', 0, 15, on_trackbar_change)
     cv2.createTrackbar('Canny Threshold 1', '5. Canny Edges', 50, 200, on_trackbar_change)
-    cv2.createTrackbar('Canny Threshold 2', '5. Canny Edges', 150, 300, on_trackbar_change)
-    cv2.createTrackbar('Morph Kernel', '6. Morphologically Closed Edges', 5, 20, on_trackbar_change)
-    cv2.createTrackbar('Area Threshold', '6. Morphologically Closed Edges', 500, 5000, on_trackbar_change)
-    cv2.createTrackbar('Hough Threshold', '10. Detected Lines', 50, 200, on_trackbar_change)
+    cv2.createTrackbar('Canny Threshold 2', '5. Canny Edges', 134, 300, on_trackbar_change)
+    cv2.createTrackbar('Morph Kernel', '6. Morphologically Closed Edges', 1, 20, on_trackbar_change)
+    cv2.createTrackbar('Area Threshold', '6. Morphologically Closed Edges', 3000, 5000, on_trackbar_change)
+    cv2.createTrackbar('Hough Threshold', '10. Detected Lines', 16, 200, on_trackbar_change)
     cv2.createTrackbar('Line Threshold', '10. Detected Lines', 10, 50, on_trackbar_change)
 
     while True:
@@ -103,6 +103,6 @@ def zebra_crossing_detection(image_path):
 
 # 调用函数进行测试
 # image_path = 'image\\1.png'
-image_path = 'image\\fe9ee2fae4d6cc95f3bce01334d1016.jpg'
+image_path = 'image\\2.png'
 detected = zebra_crossing_detection(image_path)
 print("Zebra Crossing Detected: ", detected)
