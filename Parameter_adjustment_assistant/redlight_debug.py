@@ -31,8 +31,6 @@ def red_light_detection(image_path):
     cv2.createTrackbar('Erode/Dilate Kernel', '5. Morphological Transform', 3, 20, on_trackbar_change)
     cv2.createTrackbar('Min Area', '6. Contours and Red Light', 400, 5000, on_trackbar_change)
     cv2.createTrackbar('Max Area', '6. Contours and Red Light', 3000, 5000, on_trackbar_change)
-    cv2.createTrackbar('Min Aspect Ratio', '6. Contours and Red Light', 75, 100, on_trackbar_change)
-    cv2.createTrackbar('Max Aspect Ratio', '6. Contours and Red Light', 125, 150, on_trackbar_change)
 
     while True:
         # 复制原始图像，保证每次都从原始图像开始处理
@@ -50,8 +48,6 @@ def red_light_detection(image_path):
         morph_kernel_size = ensure_odd(cv2.getTrackbarPos('Erode/Dilate Kernel', '5. Morphological Transform'))
         min_area = cv2.getTrackbarPos('Min Area', '6. Contours and Red Light')
         max_area = cv2.getTrackbarPos('Max Area', '6. Contours and Red Light')
-        min_aspect_ratio = cv2.getTrackbarPos('Min Aspect Ratio', '6. Contours and Red Light') / 100.0
-        max_aspect_ratio = cv2.getTrackbarPos('Max Aspect Ratio', '6. Contours and Red Light') / 100.0
 
         # 显示原始图像
         cv2.imshow('1. Original Image', original_image)
@@ -86,10 +82,14 @@ def red_light_detection(image_path):
         for contour in contours:
             area = cv2.contourArea(contour)
             if min_area < area < max_area:
-                x, y, w, h = cv2.boundingRect(contour)
-                aspect_ratio = float(w)/h
-                if min_aspect_ratio <= aspect_ratio <= max_aspect_ratio:  # 近似圆形
-                    cv2.rectangle(output_image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                # 使用最小外接圆进行圆形检测
+                (x, y), radius = cv2.minEnclosingCircle(contour)
+                center = (int(x), int(y))
+                radius = int(radius)
+                circle_area = np.pi * (radius ** 2)
+                
+                if min_area < circle_area < max_area:
+                    cv2.circle(output_image, center, radius, (0, 255, 0), 2)
                     detected = True
         
         cv2.imshow('6. Contours and Red Light', output_image)
