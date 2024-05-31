@@ -4,7 +4,7 @@ from zebra_detection.zebra_crossing_detection import zebra_crossing_detection
 from traffic_detection.red_light_detection import red_light_detection
 
 def capture_frames(frame_queue):
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(2)
     if not cap.isOpened():
         print("Error: Unable to open camera.")
         return

@@ -8,10 +8,10 @@ def zebra_crossing_detection(frame):
     # 设置默认参数值
     crop_percent = 0.3
     median_blur_val = 15
-    gaussian_blur_val = 15
+    gaussian_blur_val = 0
     canny_threshold1 = 50
     canny_threshold2 = 134
-    morph_kernel_size = 5
+    morph_kernel_size = 1
     area_threshold = 3000
     hough_threshold = 16
     line_threshold = 10
