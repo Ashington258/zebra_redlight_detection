@@ -8,7 +8,7 @@ def ensure_odd(val):
     return val if val % 2 == 1 else val + 1
 
 def zebra_crossing_detection():
-    cap = cv2.VideoCapture(0)  # 使用摄像头
+    cap = cv2.VideoCapture(2)  # 使用摄像头
     if not cap.isOpened():
         print("Error: Unable to open camera.")
         return
