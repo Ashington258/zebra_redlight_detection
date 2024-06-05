@@ -4,7 +4,7 @@
 Author: Ashington Ashington258@proton.me
 Date: 2024-06-05 10:04:32
 LastEditors: Ashington Ashington258@proton.me
-LastEditTime: 2024-06-05 10:12:21
+LastEditTime: 2024-06-05 10:59:05
 FilePath: /zebra_redlight_detection/linux/main.py
 Description: 请填写简介
 联系方式:921488837@qq.com
@@ -144,7 +144,7 @@ def red_light_detection(frame):
 
 
 def capture_frames(frame_queue):
-    cap = cv2.VideoCapture(1)
+    cap = cv2.VideoCapture(0)
     if not cap.isOpened():
         print("Error: Unable to open camera.")
         return
