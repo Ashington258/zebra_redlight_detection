@@ -1,10 +1,20 @@
+'''
+Author: Ashington Ashington258@proton.me
+Date: 2024-06-05 07:36:25
+LastEditors: Ashington Ashington258@proton.me
+LastEditTime: 2024-06-05 09:32:57
+FilePath: /zebra_redlight_detection/main.py
+Description: 请填写简介
+联系方式:921488837@qq.com
+Copyright (c) 2024 by ${git_name_email}, All Rights Reserved. 
+'''
 import cv2
 import multiprocessing
 from zebra_detection.zebra_crossing_detection import zebra_crossing_detection
 from traffic_detection.red_light_detection import red_light_detection
 
 def capture_frames(frame_queue):
-    cap = cv2.VideoCapture(2)
+    cap = cv2.VideoCapture(1)
     if not cap.isOpened():
         print("Error: Unable to open camera.")
         return
