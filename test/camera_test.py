@@ -1,3 +1,4 @@
+#coding=utf-8
 import cv2
 
 def print_camera_properties(cap):
