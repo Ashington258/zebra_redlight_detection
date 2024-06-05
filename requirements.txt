@@ -1,6 +1,6 @@
 #use pip install -r requirements.txt
 
-opencv-python-headless>=4.5.1.48
+opencv-python>=4.5.1.48
 numpy>=1.19.5
 
 # Linux runing Command
