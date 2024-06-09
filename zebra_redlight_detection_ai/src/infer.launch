@@ -1,0 +1,6 @@
+<launch>
+    <node pkg="your_ros_package" type="your_script_name.py" name="yolov5_ros" output="screen">
+        <param name="model" value="output/yolov5s.om" />
+        <param name="class_names" value="data.yaml" />
+    </node>
+</launch>

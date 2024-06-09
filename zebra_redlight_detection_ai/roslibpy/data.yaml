@@ -1,0 +1,7 @@
+train: F:\train_date\output\output\trans_output\train\images
+val: F:\train_date\output\output\trans_output\valid\images
+test: F:\train_date\output\output\trans_output\test\images
+nc: 2
+names:
+  0: redlight
+  1: zebra
