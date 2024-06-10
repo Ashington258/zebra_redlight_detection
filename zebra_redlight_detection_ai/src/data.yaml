@@ -1,6 +1,6 @@
-train: F:\train_date\output\output\trans_output\train\images
-val: F:\train_date\output\output\trans_output\valid\images
-test: F:\train_date\output\output\trans_output\test\images
+train: F:\15_Train_data\zebra_redlight\train_data_2024_6_10_15_46\output\trans_output\train\images
+val: F:\15_Train_data\zebra_redlight\train_data_2024_6_10_15_46\output\trans_output\valid\images
+test: F:\15_Train_data\zebra_redlight\train_data_2024_6_10_15_46\output\trans_output\test\images
 nc: 2
 names:
   0: redlight
