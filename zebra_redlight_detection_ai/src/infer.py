@@ -1,19 +1,3 @@
-"""
-Copyright 2022 Huawei Technologies Co., Ltd
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
-
 import os
 import time
 import cv2
@@ -42,12 +26,14 @@ def read_class_names(ground_truth_json):
         names[id] = category_name.strip('\n')
     return names
 
-def draw_bbox(bbox, names):
+def draw_bbox(bbox, names, F, H):
     det_result_str = ''
     for idx, class_id in enumerate(bbox[:, 5]):
-        if float(bbox[idx][4] < float(0.05)):
+        if float(bbox[idx][4]) < float(0.05):
             continue
-        det_result_str += '{} {:.4f}\n'.format(names[int(class_id)], bbox[idx][4])
+        bbox_height = bbox[idx][3] - bbox[idx][1]
+        distance = (H * F) / bbox_height
+        det_result_str += '{} {:.4f} distance: {:.2f} mm\n'.format(names[int(class_id)], bbox[idx][4], distance)
     return det_result_str
 
 def preprocess_img(img):
@@ -76,6 +62,9 @@ def main():
         print("Error: Could not open camera.")
         return
 
+    F = 35 # Example focal length in mm, adjust this value as necessary
+    H = 100  # Example actual height of object in mm, adjust this value as necessary
+
     while True:
         ret, frame = cap.read()
         if not ret:
@@ -93,9 +82,8 @@ def main():
         pred_all = boxout[0].numpy()
         scale_coords(cfg['input_shape'], pred_all[:, :4], frame.shape, ratio_pad=(scale_ratio, pad_size))
 
-        detected_labels = draw_bbox(pred_all, class_names)
+        detected_labels = draw_bbox(pred_all, class_names, F, H)
         print(detected_labels)
-
 
     cap.release()
     cv2.destroyAllWindows()
@@ -115,4 +103,3 @@ def parse_args():
 
 if __name__ == '__main__':
     main()
-
