@@ -22,3 +22,6 @@ cv是使用传统计算机视觉方案
 需要测试ai环境下的roslibpy，需要启动roscore，但是由于Atlas开发板镜像问题，无法兼容ROS1可以尝试docker部署
 
 `docker run -p 9090:9090 -v /:/dockerfile -it --env="DISPLAY=$DISPLAY"  --name=rospylib ros:melodic  /bin/bash`
+
+如果是ROS2平台可以尝试
+`wget http://fishros.com/install -O fishros && . fishros`
