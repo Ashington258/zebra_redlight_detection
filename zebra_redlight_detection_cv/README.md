@@ -1,5 +1,14 @@
 # 说明
 
+## 部署方式
+
+docker部署，似乎存在bug还没修复
+
+使用setupsh部署，未跨平台测试
+
+最好使用requirements部署
+run`use pip install -r requirements.txt`
+
 ## 工程结构
 
 📦zebra_crossing_detection
