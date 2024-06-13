@@ -39,7 +39,7 @@
  ┗ 📜README.md
 
 
-单独测试时请运行:`python infer --model=yolov5s_bs1.om`
+单独测试时请运行:`python infer.py --model=yolov5s_bs1.om`
 需要在ROS系统运行：
     1. 开启roscore，并且启动rosbridge`roslaunch rosbridge_server rosbridge_websocket.launch`
     2. 再启动roslib下python程序，注：此时必须有Ascend必要环境
