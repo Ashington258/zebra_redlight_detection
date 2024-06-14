@@ -49,6 +49,20 @@ def preprocess_img(img):
     return img_padded, scale_ratio, pad_size
 
 
+def clear_camera_buffer(cap, timeout=1.0):
+    """清空摄像头缓冲区"""
+    start_time = time.time()
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            print("Error: Failed to capture image.")
+            break
+        # 如果读取时间超过timeout秒，说明缓冲区已经清空
+        if time.time() - start_time > timeout:
+            break
+    return frame
+
+
 def main():
     args = parse_args()
     cfg = {
@@ -75,11 +89,16 @@ def main():
 
     while True:
         if State == "detection":
-            print("Detection mode on going")
-            ret, frame = cap.read()
-            if not ret:
-                print("Error: Failed to capture image.")
+            print("Detection mode ongoing")
+            frame = clear_camera_buffer(cap)  # 清空摄像头缓冲区
+            if frame is None:
                 break
+
+            # ret, frame = cap.read()
+            # if not ret:
+            #     print("Error: Failed to capture image.")
+            #     break
+            print("Captured a new frame")  # 添加日志
 
             img_batch, scale_ratio, pad_size = preprocess_img(frame)
             img_batch = np.expand_dims(img_batch, axis=0)
@@ -99,25 +118,24 @@ def main():
             )
 
             detected_labels = draw_bbox(pred_all, class_names, F, H)
-            
+
             if len(detected_labels) != 0:  # 如果检测到标签，即字符串非空
+
                 start_time = time.time()
                 end_time = start_time + 3
-
                 while (
                     time.time() < end_time
-                ):  # 持续打印检测标签三秒钟，等价于停车三秒钟
-                    print(detected_labels)  # 只有当标签全部输出完毕才进入冷却状态
+                ):  # 持续打印检测相同标签三秒钟，等价于停车三秒钟
+                    print(detected_labels)
+                    # time.sleep(0.1)  # 小睡眠以避免打印过于频繁
 
                 State = "cool"  # 将状态机置为冷却状态
+                detected_labels = []  # 清空检测到的标签
 
         if State == "cool":
-            print("Cool mode is on going")
+            print("Cool mode ongoing")
             time.sleep(2)
-            # cooltime = time.time() + 2
-            # while time.time() < cooltime:
-            #     print("cooling_now...")
-            State = "detection"
+            State = "detection"  # 再次进入detection状态
 
     cap.release()
     cv2.destroyAllWindows()
