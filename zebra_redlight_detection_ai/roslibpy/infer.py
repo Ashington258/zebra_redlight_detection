@@ -80,14 +80,14 @@ def main():
     print("Is ROS connected?", client.is_connected)
     talker = roslibpy.Topic(client, "/detection_labels", "std_msgs/String")
 
-    # Create a threading event to control the ROS publisher thread
-    pause_event = threading.Event()
-    pause_event.set()  # Initially set the event to start publishing
+    # # Create a threading event to control the ROS publisher thread
+    # pause_event = threading.Event()
+    # pause_event.set()  # Initially set the event to start publishing
 
-    # 启动ROS消息发布线程
-    threading.Thread(
-        target=ros_publisher, args=(talker, pause_event), daemon=True
-    ).start()
+    # # 启动ROS消息发布线程
+    # threading.Thread(
+    #     target=ros_publisher, args=(talker, pause_event), daemon=True
+    # ).start()
 
     args = parse_args()
     cfg = {
@@ -141,7 +141,7 @@ def main():
             detected_labels = draw_bbox(pred_all, class_names, F, H)
 
             if len(detected_labels) != 0:  # 如果检测到标签，即字符串非空
-                pause_event.clear()  # Pause the ROS publisher thread
+                # pause_event.clear()  # Pause the ROS publisher thread
                 start_time = time.time()
                 end_time = start_time + 3
                 while (
@@ -151,7 +151,7 @@ def main():
                         roslibpy.Message({"data": detected_labels})
                     )  # 发布检测标签
                     time.sleep(0.1)  # 小睡眠以避免过于频繁发布
-                pause_event.set()  # Resume the ROS publisher thread
+                # pause_event.set()  # Resume the ROS publisher thread
 
                 State = "cool"  # 将状态机置为冷却状态
                 detected_labels = []  # 清空检测到的标签
