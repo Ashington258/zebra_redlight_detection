@@ -150,6 +150,7 @@ def main():
                     talker.publish(
                         roslibpy.Message({"data": detected_labels})
                     )  # 发布检测标签
+                    print(detected_labels)#
                     time.sleep(0.1)  # 小睡眠以避免过于频繁发布
                 # pause_event.set()  # Resume the ROS publisher thread
 
