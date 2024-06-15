@@ -93,7 +93,6 @@ def main():
             frame = clear_camera_buffer(cap)  # 清空摄像头缓冲区
             if frame is None:
                 break
-
             # ret, frame = cap.read()
             # if not ret:
             #     print("Error: Failed to capture image.")
