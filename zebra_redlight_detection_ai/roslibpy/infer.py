@@ -5,13 +5,14 @@ import json
 import yaml
 import argparse
 import numpy as np
+import roslibpy
+import threading
 from collections import OrderedDict
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
 import torch
 from ais_bench.infer.interface import InferSession
 from det_utils import letterbox, scale_coords, nms, xyxy2xywh
-import roslibpy
 
 
 def read_class_names(ground_truth_json):
@@ -50,7 +51,44 @@ def preprocess_img(img):
     return img_padded, scale_ratio, pad_size
 
 
+def clear_camera_buffer(cap, timeout=1.0):
+    """清空摄像头缓冲区"""
+    start_time = time.time()
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            print("Error: Failed to capture image.")
+            break
+        # 如果读取时间超过timeout秒，说明缓冲区已经清空
+        if time.time() - start_time > timeout:
+            break
+    return frame
+
+
+def ros_publisher(talker, pause_event):
+    """ROS消息发布线程"""
+    while True:
+        pause_event.wait()  # Wait until the pause_event is set
+        talker.publish(roslibpy.Message({"data": ""}))
+        time.sleep(0.1)
+
+
 def main():
+    # Connect to ROS
+    client = roslibpy.Ros(host="localhost", port=9090)
+    client.run()
+    print("Is ROS connected?", client.is_connected)
+    talker = roslibpy.Topic(client, "/detection_labels", "std_msgs/String")
+
+    # Create a threading event to control the ROS publisher thread
+    pause_event = threading.Event()
+    pause_event.set()  # Initially set the event to start publishing
+
+    # 启动ROS消息发布线程
+    threading.Thread(
+        target=ros_publisher, args=(talker, pause_event), daemon=True
+    ).start()
+
     args = parse_args()
     cfg = {
         "conf_thres": 0.4,
@@ -69,47 +107,74 @@ def main():
         print("Error: Could not open camera.")
         return
 
-    # Connect to ROS
-    client = roslibpy.Ros(host="localhost", port=9090)
-    client.run()
-    print("Is ROS connected?", client.is_connected)
-    talker = roslibpy.Topic(client, "/detection_labels", "std_msgs/String")
-
     F = 35  # Example focal length in mm, adjust this value as necessary
     H = 100  # Example actual height of object in mm, adjust this value as necessary
 
+    State = "detection"
+
     while True:
-        ret, frame = cap.read()
-        if not ret:
-            print("Error: Failed to capture image.")
-            break
 
-        img_batch, scale_ratio, pad_size = preprocess_img(frame)
-        img_batch = np.expand_dims(img_batch, axis=0)
+        if State == "detection":
+            print("Detection mode ongoing")
+            frame = clear_camera_buffer(cap)  # 清空摄像头缓冲区
+            if frame is None:
+                break
+            print("Captured a new frame")  # 添加日志
 
-        infer_start = time.time()
-        output = model.infer([img_batch])
-        output = torch.tensor(output[0])
-        boxout = nms(output, conf_thres=cfg["conf_thres"], iou_thres=cfg["iou_thres"])
+            img_batch, scale_ratio, pad_size = preprocess_img(frame)
+            img_batch = np.expand_dims(img_batch, axis=0)
 
-        pred_all = boxout[0].numpy()
-        scale_coords(
-            cfg["input_shape"],
-            pred_all[:, :4],
-            frame.shape,
-            ratio_pad=(scale_ratio, pad_size),
-        )
+            output = model.infer([img_batch])
+            output = torch.tensor(output[0])
+            boxout = nms(
+                output, conf_thres=cfg["conf_thres"], iou_thres=cfg["iou_thres"]
+            )
 
-        detected_labels = draw_bbox(pred_all, class_names, F, H)
-        print(detected_labels)
+            pred_all = boxout[0].numpy()
+            scale_coords(
+                cfg["input_shape"],
+                pred_all[:, :4],
+                frame.shape,
+                ratio_pad=(scale_ratio, pad_size),
+            )
 
-        # Publish to ROS
-        talker.publish(roslibpy.Message({"data": detected_labels}))
+            detected_labels = draw_bbox(pred_all, class_names, F, H)
+
+            if len(detected_labels) != 0:  # 如果检测到标签，即字符串非空
+                pause_event.clear()  # Pause the ROS publisher thread
+                start_time = time.time()
+                end_time = start_time + 3
+                while (
+                    time.time() < end_time
+                ):  # 持续打印检测相同标签三秒钟，等价于停车三秒钟
+                    talker.publish(
+                        roslibpy.Message({"data": detected_labels})
+                    )  # 发布检测标签
+                    time.sleep(0.1)  # 小睡眠以避免过于频繁发布
+                pause_event.set()  # Resume the ROS publisher thread
+
+                State = "cool"  # 将状态机置为冷却状态
+                detected_labels = []  # 清空检测到的标签
+            else:  #
+                talker.publish(
+                    roslibpy.Message({"data": detected_labels})
+                )  # 发布检测标签
+
+        if State == "cool":
+            print("Cool mode ongoing")  # 发送两秒的空消息，不能响应
+            detected_labels = []  # 清空检测到的标签
+            start_time = time.time()
+            end_time = start_time + 3
+            while time.time() < end_time:
+                talker.publish(
+                    roslibpy.Message({"data": detected_labels})
+                )  # 发布检测标签
+                time.sleep(0.1)  # 小睡眠以避免过于频繁发布
+            State = "detection"  # 再次进入detection状态
 
     cap.release()
     cv2.destroyAllWindows()
     client.terminate()
-    print("ROS connection terminated.")
 
 
 def parse_args():
