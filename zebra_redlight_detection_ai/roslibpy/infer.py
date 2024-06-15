@@ -51,7 +51,7 @@ def preprocess_img(img):
     return img_padded, scale_ratio, pad_size
 
 
-def clear_camera_buffer(cap, timeout=1.0):
+def clear_camera_buffer(cap, timeout=0.5):
     """清空摄像头缓冲区"""
     start_time = time.time()
     while True:
@@ -111,15 +111,16 @@ def main():
     H = 100  # Example actual height of object in mm, adjust this value as necessary
 
     State = "detection"
-
+    car_running_command = ["car running command"]
     while True:
+        # 在主循环中增加发布空消息，让ROS程序正常运行,ROS系统必须需要一直接收空消息才能进入回调函数，改变标志位
+        talker.publish(roslibpy.Message({"data": car_running_command}))
 
         if State == "detection":
             print("Detection mode ongoing")
             frame = clear_camera_buffer(cap)  # 清空摄像头缓冲区
             if frame is None:
                 break
-            print("Captured a new frame")  # 添加日志
 
             img_batch, scale_ratio, pad_size = preprocess_img(frame)
             img_batch = np.expand_dims(img_batch, axis=0)
@@ -150,7 +151,7 @@ def main():
                     talker.publish(
                         roslibpy.Message({"data": detected_labels})
                     )  # 发布检测标签
-                    print(detected_labels)#
+                    print(detected_labels)  #
                     time.sleep(0.1)  # 小睡眠以避免过于频繁发布
                 # pause_event.set()  # Resume the ROS publisher thread
 
@@ -158,7 +159,7 @@ def main():
                 detected_labels = []  # 清空检测到的标签
             else:  #
                 talker.publish(
-                    roslibpy.Message({"data": detected_labels})
+                    roslibpy.Message({"data": car_running_command})
                 )  # 发布检测标签
 
         if State == "cool":
@@ -168,7 +169,7 @@ def main():
             end_time = start_time + 3
             while time.time() < end_time:
                 talker.publish(
-                    roslibpy.Message({"data": detected_labels})
+                    roslibpy.Message({"data": car_running_command})
                 )  # 发布检测标签
                 time.sleep(0.1)  # 小睡眠以避免过于频繁发布
             State = "detection"  # 再次进入detection状态
