@@ -2,7 +2,7 @@
  * @Author: Ashington ashington258@proton.me
  * @Date: 2024-06-10 20:31:34
  * @LastEditors: Ashington ashington258@proton.me
- * @LastEditTime: 2024-06-10 22:17:23
+ * @LastEditTime: 2024-06-16 15:40:30
  * @FilePath: \zebra_redlight_detection\README.md
  * @Description: 请填写简介
  * 联系方式:921488837@qq.com
@@ -22,6 +22,8 @@ cv是使用传统计算机视觉方案
 需要测试ai环境下的roslibpy，需要启动roscore，但是由于Atlas开发板镜像问题，无法兼容ROS1可以尝试docker部署
 
 `docker run -p 9090:9090 -v /:/dockerfile -it --env="DISPLAY=$DISPLAY"  --name=rospylib ros:melodic  /bin/bash`
+
+`docker run --network host -v /:/dockerfile -it --env="DISPLAY=$DISPLAY"  --name=rospylib osrf/ros:melodic-desktop-full  /bin/bash --platform=linux/arm64/v8`
 
 如果是ROS2平台可以尝试
 `wget http://fishros.com/install -O fishros && . fishros`
