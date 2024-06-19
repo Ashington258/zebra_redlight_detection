@@ -195,25 +195,64 @@ def main():
 
 
 def parse_args():
+    """
+    Parse command line arguments for inference.
+
+    Returns:
+        argparse.Namespace: The parsed arguments.
+    """
     parser = argparse.ArgumentParser(description="YoloV5 offline model inference.")
+
+    # Add argument for annotation file path
     parser.add_argument(
         "--ground_truth_json",
         type=str,
         default="test/test.json",
         help="annotation file path",
     )
+
+    # Add argument for om model path
     parser.add_argument(
-        "--model", type=str, default="output/yolov5s.om", help="om model path"
+        "--model",
+        type=str,
+        default="output/yolov5s.om",
+        help="om model path",
     )
-    parser.add_argument("--device-id", type=int, default=0, help="device id")
-    parser.add_argument("--output-dir", type=str, default="output", help="output path")
-    parser.add_argument("--eval", action="store_true", help="compute mAP")
+
+    # Add argument for device id
+    parser.add_argument(
+        "--device-id",
+        type=int,
+        default=0,
+        help="device id",
+    )
+
+    # Add argument for output directory
+    parser.add_argument(
+        "--output-dir",
+        type=str,
+        default="output",
+        help="output path",
+    )
+
+    # Add argument for evaluation
+    parser.add_argument(
+        "--eval",
+        action="store_true",
+        help="compute mAP",
+    )
+
+    # Add argument for drawing detect result
     parser.add_argument(
         "--visible",
         action="store_true",
         help="draw detect result at image and save to output/img",
     )
+
+    # Parse the arguments
     args = parser.parse_args()
+
+    # Return the parsed arguments
     return args
 
 
