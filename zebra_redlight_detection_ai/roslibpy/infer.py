@@ -16,6 +16,19 @@ from det_utils import letterbox, scale_coords, nms, xyxy2xywh
 
 
 def read_class_names(ground_truth_json):
+    """
+    Reads the class names from a ground truth JSON file and returns a dictionary mapping class IDs to class names.
+
+    Parameters:
+        ground_truth_json (str): The path to the ground truth JSON file.
+
+    Returns:
+        dict: A dictionary mapping class IDs to class names.
+
+    Raises:
+        FileNotFoundError: If the ground truth JSON file does not exist.
+        JSONDecodeError: If the ground truth JSON file cannot be decoded.
+    """
     with open(ground_truth_json, "r") as file:
         content = file.read()
     content = json.loads(content)
@@ -53,6 +66,8 @@ def preprocess_img(img):
 
 def clear_camera_buffer(cap, timeout=0.5):
     """清空摄像头缓冲区"""
+    # 该函数尤其重要，用于清除缓存区，如不执行此步，则后面读取视频帧函数会多次进入，因为Video.Capture.read()会抓取多帧
+    # 清除方法，读取即清除
     start_time = time.time()
     while True:
         ret, frame = cap.read()
@@ -83,7 +98,7 @@ def main():
     # # Create a threading event to control the ROS publisher thread
     # pause_event = threading.Event()
     # pause_event.set()  # Initially set the event to start publishing
-
+    # NOTE 多线程被我关闭了
     # # 启动ROS消息发布线程
     # threading.Thread(
     #     target=ros_publisher, args=(talker, pause_event), daemon=True
