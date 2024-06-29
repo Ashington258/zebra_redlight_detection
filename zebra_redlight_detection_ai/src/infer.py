@@ -29,15 +29,34 @@ def read_class_names(ground_truth_json):
 
 
 def draw_bbox(bbox, names, F, H):
+    """
+    根据检测结果绘制边界框。
+
+    参数:
+    bbox: 一个二维数组，每一行代表一个检测到的物体，包含坐标信息和置信度。
+    names: 一个类ID到类名的映射列表。
+    F: 相机的焦距。
+    H: 摄像头的高度。
+
+    返回值:
+    一个字符串，包含每个检测到的物体的名称、置信度和与摄像头的距离。
+    """
+    # 初始化用于存储检测结果字符串的变量
     det_result_str = ""
+    # 遍历每个检测到的物体
     for idx, class_id in enumerate(bbox[:, 5]):
+        # 如果置信度低于0.05，则跳过当前物体
         if float(bbox[idx][4]) < float(0.05):
             continue
+        # 计算边界框的高度
         bbox_height = bbox[idx][3] - bbox[idx][1]
+        # 根据相机参数和边界框高度计算物体到摄像头的距离
         distance = (H * F) / bbox_height
+        # 格式化并添加物体的名称、置信度和距离到结果字符串
         det_result_str += "{} {:.4f} distance: {:.2f} mm\n".format(
             names[int(class_id)], bbox[idx][4], distance
         )
+    # 返回结果字符串
     return det_result_str
 
 
