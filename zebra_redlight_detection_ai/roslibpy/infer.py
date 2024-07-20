@@ -56,6 +56,30 @@ def draw_bbox(bbox, names, F, H):
     return det_result_str
 
 
+def filter_and_print_results(det_result_str, threshold=0.5):
+    """
+    过滤并打印检测结果中超过置信度阈值的行。
+    
+    该函数接收一个包含检测结果的字符串，其中每行代表一个检测到的物体及其置信度。
+    它将结果按行分割，并过滤掉置信度低于给定阈值的行，只打印置信度高于或等于阈值的行。
+    
+    参数:
+    det_result_str (str): 包含物体检测结果的字符串，每行一个结果。
+    threshold (float): 置信度阈值，默认为0.5。
+    """
+    # 移除字符串首尾的空格并按行分割
+    lines = det_result_str.strip().split("\n")
+    for line in lines:
+        # 按空格分割行，获取置信度字符串
+        parts = line.split(" ")
+        if len(parts) > 1:
+            # 将置信度字符串转换为浮点数
+            confidence = float(parts[1])
+            if confidence > threshold:
+                # 如果置信度高于阈值，打印该行
+                print(line)
+
+
 def preprocess_img(img):
     img_padded, scale_ratio, pad_size = letterbox(img, new_shape=[640, 640])
     img_padded = img_padded[..., ::-1].transpose(2, 0, 1)  # BGR to RGB, HWC to CHW
