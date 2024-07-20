@@ -44,29 +44,49 @@ def read_class_names(ground_truth_json):
 
 
 def draw_bbox(bbox, names, F, H):
+    """
+    根据检测结果绘制边界框。
+
+    参数:
+    bbox: 一个二维数组，每一行代表一个检测到的物体，包含坐标信息和置信度。
+    names: 一个类ID到类名的映射列表。
+    F: 相机的焦距。
+    H: 摄像头的高度。
+
+    返回值:
+    一个字符串，包含每个检测到的物体的名称、置信度和与摄像头的距离。
+    """
+    # 初始化用于存储检测结果字符串的变量
     det_result_str = ""
+    # 遍历每个检测到的物体
     for idx, class_id in enumerate(bbox[:, 5]):
+        # 如果置信度低于0.05，则跳过当前物体
         if float(bbox[idx][4]) < float(0.05):
             continue
+        # 计算边界框的高度
         bbox_height = bbox[idx][3] - bbox[idx][1]
+        # 根据相机参数和边界框高度计算物体到摄像头的距离
         distance = (H * F) / bbox_height
+        # 格式化并添加物体的名称、置信度和距离到结果字符串
         det_result_str += "{} {:.4f} distance: {:.2f} mm\n".format(
             names[int(class_id)], bbox[idx][4], distance
         )
+    # 返回结果字符串
     return det_result_str
 
 
-def filter_and_print_results(det_result_str, threshold=0.5):
+def filter_confidences(det_result_str, threshold=0.3):
     """
-    过滤并打印检测结果中超过置信度阈值的行。
-    
-    该函数接收一个包含检测结果的字符串，其中每行代表一个检测到的物体及其置信度。
-    它将结果按行分割，并过滤掉置信度低于给定阈值的行，只打印置信度高于或等于阈值的行。
-    
+    过滤检测结果中超过置信度阈值的行，并返回这些行的置信度值。
+
     参数:
     det_result_str (str): 包含物体检测结果的字符串，每行一个结果。
     threshold (float): 置信度阈值，默认为0.5。
+
+    返回:
+    list: 包含所有超过阈值的置信度值。
     """
+    confidences = []
     # 移除字符串首尾的空格并按行分割
     lines = det_result_str.strip().split("\n")
     for line in lines:
@@ -76,8 +96,8 @@ def filter_and_print_results(det_result_str, threshold=0.5):
             # 将置信度字符串转换为浮点数
             confidence = float(parts[1])
             if confidence > threshold:
-                # 如果置信度高于阈值，打印该行
-                print(line)
+                confidences.append(confidence)
+    return confidences
 
 
 def preprocess_img(img):
